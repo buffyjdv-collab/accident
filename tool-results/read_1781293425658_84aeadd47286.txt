@@ -1,0 +1,918 @@
+     1→'use client';
+     2→
+     3→import React, { useState } from 'react';
+     4→import { AccidentReportFormData, getEmptyFormData } from '@/lib/report-types';
+     5→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+     6→import { Input } from '@/components/ui/input';
+     7→import { Label } from '@/components/ui/label';
+     8→import { Textarea } from '@/components/ui/textarea';
+     9→import { Button } from '@/components/ui/button';
+    10→import { Checkbox } from '@/components/ui/checkbox';
+    11→import {
+    12→  Accordion,
+    13→  AccordionContent,
+    14→  AccordionItem,
+    15→  AccordionTrigger,
+    16→} from '@/components/ui/accordion';
+    17→import {
+    18→  Select,
+    19→  SelectContent,
+    20→  SelectItem,
+    21→  SelectTrigger,
+    22→  SelectValue,
+    23→} from '@/components/ui/select';
+    24→import {
+    25→  Save,
+    26→  RotateCcw,
+    27→  FileText,
+    28→  Car,
+    29→  Users,
+    30→  Wrench,
+    31→  Shield,
+    32→  ClipboardCheck,
+    33→  Stamp,
+    34→} from 'lucide-react';
+    35→import { useToast } from '@/hooks/use-toast';
+    36→
+    37→interface AccidentReportFormProps {
+    38→  onSubmitted: () => void;
+    39→}
+    40→
+    41→export default function AccidentReportForm({ onSubmitted }: AccidentReportFormProps) {
+    42→  const { toast } = useToast();
+    43→  const [formData, setFormData] = useState<AccidentReportFormData>(getEmptyFormData());
+    44→  const [isSubmitting, setIsSubmitting] = useState(false);
+    45→
+    46→  const updateField = (field: keyof AccidentReportFormData, value: string) => {
+    47→    setFormData((prev) => ({ ...prev, [field]: value }));
+    48→  };
+    49→
+    50→  const toggleCheckbox = (field: keyof AccidentReportFormData) => {
+    51→    setFormData((prev) => ({ ...prev, [field]: prev[field] === 'Yes' ? '' : 'Yes' }));
+    52→  };
+    53→
+    54→  const handleReset = () => {
+    55→    setFormData(getEmptyFormData());
+    56→    toast({ title: 'Form Reset', description: 'All fields have been cleared.' });
+    57→  };
+    58→
+    59→  const handleSubmit = async (e: React.FormEvent) => {
+    60→    e.preventDefault();
+    61→
+    62→    if (!formData.crimeNo || !formData.section || !formData.policeStation) {
+    63→      toast({
+    64→        title: 'Validation Error',
+    65→        description: 'Crime No, Section, and Police Station are required.',
+    66→        variant: 'destructive',
+    67→      });
+    68→      return;
+    69→    }
+    70→
+    71→    setIsSubmitting(true);
+    72→    try {
+    73→      const res = await fetch('/api/reports', {
+    74→        method: 'POST',
+    75→        headers: { 'Content-Type': 'application/json' },
+    76→        body: JSON.stringify(formData),
+    77→      });
+    78→
+    79→      if (!res.ok) {
+    80→        const err = await res.json();
+    81→        throw new Error(err.error || 'Failed to create report');
+    82→      }
+    83→
+    84→      toast({
+    85→        title: 'Report Submitted',
+    86→        description: `Crime No ${formData.crimeNo} has been successfully saved.`,
+    87→      });
+    88→      setFormData(getEmptyFormData());
+    89→      onSubmitted();
+    90→    } catch (error) {
+    91→      toast({
+    92→        title: 'Submission Failed',
+    93→        description: error instanceof Error ? error.message : 'An error occurred.',
+    94→        variant: 'destructive',
+    95→      });
+    96→    } finally {
+    97→      setIsSubmitting(false);
+    98→    }
+    99→  };
+   100→
+   101→  return (
+   102→    <form onSubmit={handleSubmit} className="space-y-4">
+   103→      {/* Header Section */}
+   104→      <Card className="border-slate-300">
+   105→        <CardHeader className="bg-slate-50 pb-3">
+   106→          <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
+   107→            <FileText className="h-5 w-5" />
+   108→            Accident Inspection Report
+   109→          </CardTitle>
+   110→          <p className="text-sm text-slate-500">
+   111→            Fill in all applicable fields. Fields marked with * are required.
+   112→          </p>
+   113→        </CardHeader>
+   114→        <CardContent className="pt-4">
+   115→          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+   116→            <div className="space-y-2">
+   117→              <Label htmlFor="crimeNo" className="text-slate-700 font-medium">
+   118→                Crime No <span className="text-red-500">*</span>
+   119→              </Label>
+   120→              <Input
+   121→                id="crimeNo"
+   122→                value={formData.crimeNo}
+   123→                onChange={(e) => updateField('crimeNo', e.target.value)}
+   124→                placeholder="e.g. 123/2024"
+   125→                className="border-slate-300"
+   126→                required
+   127→              />
+   128→            </div>
+   129→            <div className="space-y-2">
+   130→              <Label htmlFor="section" className="text-slate-700 font-medium">
+   131→                Section <span className="text-red-500">*</span>
+   132→              </Label>
+   133→              <Input
+   134→                id="section"
+   135→                value={formData.section}
+   136→                onChange={(e) => updateField('section', e.target.value)}
+   137→                placeholder="e.g. U/S 106(1) BNS"
+   138→                className="border-slate-300"
+   139→                required
+   140→              />
+   141→            </div>
+   142→            <div className="space-y-2">
+   143→              <Label htmlFor="policeStation" className="text-slate-700 font-medium">
+   144→                Police Station <span className="text-red-500">*</span>
+   145→              </Label>
+   146→              <Input
+   147→                id="policeStation"
+   148→                value={formData.policeStation}
+   149→                onChange={(e) => updateField('policeStation', e.target.value)}
+   150→                placeholder="e.g. PS Husnabad"
+   151→                className="border-slate-300"
+   152→                required
+   153→              />
+   154→            </div>
+   155→          </div>
+   156→        </CardContent>
+   157→      </Card>
+   158→
+   159→      {/* Accordion Sections */}
+   160→      <Accordion type="multiple" defaultValue={['section-1', 'section-2', 'section-3']} className="space-y-2">
+   161→
+   162→        {/* Section 1 - Requisition & Receipt */}
+   163→        <AccordionItem value="section-1" className="border border-slate-300 rounded-lg overflow-hidden">
+   164→          <AccordionTrigger className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-800 font-medium hover:no-underline">
+   165→            <span className="flex items-center gap-2">
+   166→              <ClipboardCheck className="h-4 w-4" />
+   167→              Section 1 — Requisition &amp; Receipt
+   168→            </span>
+   169→          </AccordionTrigger>
+   170→          <AccordionContent className="px-4 pb-4 pt-2 space-y-4">
+   171→            <div className="space-y-2">
+   172→              <Label className="text-slate-700 font-medium">
+   173→                1. Name and address of the officer from whom requisition is received
+   174→              </Label>
+   175→              <Textarea
+   176→                value={formData.officerName}
+   177→                onChange={(e) => updateField('officerName', e.target.value)}
+   178→                placeholder="Enter officer name and address"
+   179→                className="border-slate-300 min-h-[60px]"
+   180→              />
+   181→            </div>
+   182→            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   183→              <div className="space-y-2">
+   184→                <Label className="text-slate-700 font-medium">
+   185→                  2. Date of receipt by the Inspector
+   186→                </Label>
+   187→                <Input
+   188→                  type="date"
+   189→                  value={formData.receiptDate}
+   190→                  onChange={(e) => updateField('receiptDate', e.target.value)}
+   191→                  className="border-slate-300"
+   192→                />
+   193→              </div>
+   194→              <div className="space-y-2">
+   195→                <Label className="text-slate-700 font-medium">
+   196→                  2. Receipt details
+   197→                </Label>
+   198→                <Input
+   199→                  value={formData.receiptDetails}
+   200→                  onChange={(e) => updateField('receiptDetails', e.target.value)}
+   201→                  placeholder='e.g. "from Kumar PC 356 PS Husnabad"'
+   202→                  className="border-slate-300"
+   203→                />
+   204→              </div>
+   205→            </div>
+   206→          </AccordionContent>
+   207→        </AccordionItem>
+   208→
+   209→        {/* Section 2 - Accident Details */}
+   210→        <AccordionItem value="section-2" className="border border-slate-300 rounded-lg overflow-hidden">
+   211→          <AccordionTrigger className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-800 font-medium hover:no-underline">
+   212→            <span className="flex items-center gap-2">
+   213→              <Car className="h-4 w-4" />
+   214→              Section 2 — Accident Details
+   215→            </span>
+   216→          </AccordionTrigger>
+   217→          <AccordionContent className="px-4 pb-4 pt-2 space-y-4">
+   218→            <div>
+   219→              <Label className="text-slate-700 font-medium">
+   220→                3. Date, time and place of accident
+   221→              </Label>
+   222→              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+   223→                <div className="space-y-1">
+   224→                  <Label className="text-xs text-slate-500">Date</Label>
+   225→                  <Input
+   226→                    type="date"
+   227→                    value={formData.accidentDate}
+   228→                    onChange={(e) => updateField('accidentDate', e.target.value)}
+   229→                    className="border-slate-300"
+   230→                  />
+   231→                </div>
+   232→                <div className="space-y-1">
+   233→                  <Label className="text-xs text-slate-500">Time</Label>
+   234→                  <Input
+   235→                    type="time"
+   236→                    value={formData.accidentTime}
+   237→                    onChange={(e) => updateField('accidentTime', e.target.value)}
+   238→                    className="border-slate-300"
+   239→                  />
+   240→                </div>
+   241→                <div className="space-y-1">
+   242→                  <Label className="text-xs text-slate-500">Place</Label>
+   243→                  <Input
+   244→                    value={formData.accidentPlace}
+   245→                    onChange={(e) => updateField('accidentPlace', e.target.value)}
+   246→                    placeholder="Place of accident"
+   247→                    className="border-slate-300"
+   248→                  />
+   249→                </div>
+   250→              </div>
+   251→            </div>
+   252→            <div className="space-y-2">
+   253→              <Label className="text-slate-700 font-medium">
+   254→                4. Width of road, nature (bend, turn, curve, gradient etc.) and brief description of the locality
+   255→              </Label>
+   256→              <Textarea
+   257→                value={formData.roadDescription}
+   258→                onChange={(e) => updateField('roadDescription', e.target.value)}
+   259→                placeholder="Describe road width, nature and locality"
+   260→                className="border-slate-300 min-h-[80px]"
+   261→              />
+   262→            </div>
+   263→          </AccordionContent>
+   264→        </AccordionItem>
+   265→
+   266→        {/* Section 3 - Vehicle Details */}
+   267→        <AccordionItem value="section-3" className="border border-slate-300 rounded-lg overflow-hidden">
+   268→          <AccordionTrigger className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-800 font-medium hover:no-underline">
+   269→            <span className="flex items-center gap-2">
+   270→              <Car className="h-4 w-4" />
+   271→              Section 3 — Vehicle Details
+   272→            </span>
+   273→          </AccordionTrigger>
+   274→          <AccordionContent className="px-4 pb-4 pt-2 space-y-4">
+   275→            <div>
+   276→              <Label className="text-slate-700 font-medium mb-2 block">
+   277→                5. Vehicle details
+   278→              </Label>
+   279→              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+   280→                <div className="space-y-1">
+   281→                  <Label className="text-xs text-slate-500">Chassis No</Label>
+   282→                  <Input
+   283→                    value={formData.chassisNo || ''}
+   284→                    onChange={(e) => updateField('chassisNo', e.target.value)}
+   285→                    placeholder="Chassis No"
+   286→                    className="border-slate-300"
+   287→                  />
+   288→                </div>
+   289→                <div className="space-y-1">
+   290→                  <Label className="text-xs text-slate-500">Registration No</Label>
+   291→                  <Input
+   292→                    value={formData.regNo || ''}
+   293→                    onChange={(e) => updateField('regNo', e.target.value)}
+   294→                    placeholder="Reg No"
+   295→                    className="border-slate-300"
+   296→                  />
+   297→                </div>
+   298→                <div className="space-y-1">
+   299→                  <Label className="text-xs text-slate-500">Class of Vehicle</Label>
+   300→                  <Input
+   301→                    value={formData.vehicleClass || ''}
+   302→                    onChange={(e) => updateField('vehicleClass', e.target.value)}
+   303→                    placeholder="e.g. Tractor"
+   304→                    className="border-slate-300"
+   305→                  />
+   306→                </div>
+   307→                <div className="space-y-1">
+   308→                  <Label className="text-xs text-slate-500">Make/Model</Label>
+   309→                  <Input
+   310→                    value={formData.vehicleMake || ''}
+   311→                    onChange={(e) => updateField('vehicleMake', e.target.value)}
+   312→                    placeholder="e.g. Swaraj 735 FE"
+   313→                    className="border-slate-300"
+   314→                  />
+   315→                </div>
+   316→                <div className="space-y-1">
+   317→                  <Label className="text-xs text-slate-500">Year of Manufacture</Label>
+   318→                  <Input
+   319→                    value={formData.vehicleYear || ''}
+   320→                    onChange={(e) => updateField('vehicleYear', e.target.value)}
+   321→                    placeholder="e.g. 05/2013"
+   322→                    className="border-slate-300"
+   323→                  />
+   324→                </div>
+   325→              </div>
+   326→            </div>
+   327→            <div>
+   328→              <Label className="text-slate-700 font-medium mb-2 block">
+   329→                6. Date, time and place of inspection
+   330→              </Label>
+   331→              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+   332→                <div className="space-y-1">
+   333→                  <Label className="text-xs text-slate-500">Date</Label>
+   334→                  <Input
+   335→                    type="date"
+   336→                    value={formData.inspectionDate}
+   337→                    onChange={(e) => updateField('inspectionDate', e.target.value)}
+   338→                    className="border-slate-300"
+   339→                  />
+   340→                </div>
+   341→                <div className="space-y-1">
+   342→                  <Label className="text-xs text-slate-500">Time</Label>
+   343→                  <Input
+   344→                    type="time"
+   345→                    value={formData.inspectionTime}
+   346→                    onChange={(e) => updateField('inspectionTime', e.target.value)}
+   347→                    className="border-slate-300"
+   348→                  />
+   349→                </div>
+   350→                <div className="space-y-1">
+   351→                  <Label className="text-xs text-slate-500">Place</Label>
+   352→                  <Input
+   353→                    value={formData.inspectionPlace}
+   354→                    onChange={(e) => updateField('inspectionPlace', e.target.value)}
+   355→                    placeholder="Inspection place"
+   356→                    className="border-slate-300"
+   357→                  />
+   358→                </div>
+   359→              </div>
+   360→            </div>
+   361→            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   362→              <div className="space-y-2">
+   363→                <Label className="text-slate-700 font-medium">
+   364→                  7. Date of last inspection
+   365→                </Label>
+   366→                <Input
+   367→                  value={formData.lastInspectionDate || ''}
+   368→                  onChange={(e) => updateField('lastInspectionDate', e.target.value)}
+   369→                  placeholder="Date or 'Not Produced'"
+   370→                  className="border-slate-300"
+   371→                />
+   372→              </div>
+   373→              <div className="space-y-2">
+   374→                <Label className="text-slate-700 font-medium">
+   375→                  Fitness certificate expiry date
+   376→                </Label>
+   377→                <Input
+   378→                  value={formData.fitnessCertExpiryDate || ''}
+   379→                  onChange={(e) => updateField('fitnessCertExpiryDate', e.target.value)}
+   380→                  placeholder="Expiry date or 'Not Produced'"
+   381→                  className="border-slate-300"
+   382→                />
+   383→              </div>
+   384→            </div>
+   385→          </AccordionContent>
+   386→        </AccordionItem>
+   387→
+   388→        {/* Section 4 - Damages & Brakes */}
+   389→        <AccordionItem value="section-4" className="border border-slate-300 rounded-lg overflow-hidden">
+   390→          <AccordionTrigger className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-800 font-medium hover:no-underline">
+   391→            <span className="flex items-center gap-2">
+   392→              <Wrench className="h-4 w-4" />
+   393→              Section 4 — Damages &amp; Brakes
+   394→            </span>
+   395→          </AccordionTrigger>
+   396→          <AccordionContent className="px-4 pb-4 pt-2 space-y-4">
+   397→            <div className="space-y-2">
+   398→              <Label className="text-slate-700 font-medium">
+   399→                8. Details regarding damages sustained by the vehicle
+   400→              </Label>
+   401→              <Textarea
+   402→                value={formData.damagesDetails || ''}
+   403→                onChange={(e) => updateField('damagesDetails', e.target.value)}
+   404→                placeholder="Describe all damages"
+   405→                className="border-slate-300 min-h-[80px]"
+   406→              />
+   407→            </div>
+   408→
+   409→            <div>
+   410→              <Label className="text-slate-700 font-medium mb-3 block">
+   411→                9. Condition of brakes
+   412→              </Label>
+   413→              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+   414→                <div className="space-y-2">
+   415→                  <Label className="text-xs text-slate-500">a) Efficiency of foot brake</Label>
+   416→                  <Select
+   417→                    value={formData.footBrakeEfficiency || ''}
+   418→                    onValueChange={(v) => updateField('footBrakeEfficiency', v)}
+   419→                  >
+   420→                    <SelectTrigger className="border-slate-300">
+   421→                      <SelectValue placeholder="Select" />
+   422→                    </SelectTrigger>
+   423→                    <SelectContent>
+   424→                      <SelectItem value="Efficient">Efficient</SelectItem>
+   425→                      <SelectItem value="Not Efficient">Not Efficient</SelectItem>
+   426→                      <SelectItem value="Not Working">Not Working</SelectItem>
+   427→                    </SelectContent>
+   428→                  </Select>
+   429→                </div>
+   430→                <div className="space-y-2">
+   431→                  <Label className="text-xs text-slate-500">b) Efficiency of parking brake</Label>
+   432→                  <Select
+   433→                    value={formData.parkingBrakeEfficiency || ''}
+   434→                    onValueChange={(v) => updateField('parkingBrakeEfficiency', v)}
+   435→                  >
+   436→                    <SelectTrigger className="border-slate-300">
+   437→                      <SelectValue placeholder="Select" />
+   438→                    </SelectTrigger>
+   439→                    <SelectContent>
+   440→                      <SelectItem value="Efficient">Efficient</SelectItem>
+   441→                      <SelectItem value="Not Efficient">Not Efficient</SelectItem>
+   442→                      <SelectItem value="Not Working">Not Working</SelectItem>
+   443→                    </SelectContent>
+   444→                  </Select>
+   445→                </div>
+   446→                <div className="space-y-2">
+   447→                  <Label className="text-xs text-slate-500">c) Even action or not</Label>
+   448→                  <Select
+   449→                    value={formData.brakeEvenAction || ''}
+   450→                    onValueChange={(v) => updateField('brakeEvenAction', v)}
+   451→                  >
+   452→                    <SelectTrigger className="border-slate-300">
+   453→                      <SelectValue placeholder="Select" />
+   454→                    </SelectTrigger>
+   455→                    <SelectContent>
+   456→                      <SelectItem value="Even Action">Even Action</SelectItem>
+   457→                      <SelectItem value="Not Even Action">Not Even Action</SelectItem>
+   458→                    </SelectContent>
+   459→                  </Select>
+   460→                </div>
+   461→              </div>
+   462→            </div>
+   463→
+   464→            <div>
+   465→              <Label className="text-slate-700 font-medium mb-3 block">
+   466→                10. Cause of failure of brakes
+   467→              </Label>
+   468→
+   469→              {/* Hydraulic */}
+   470→              <div className="border border-slate-200 rounded-lg p-4 mb-4">
+   471→                <h4 className="font-medium text-slate-700 mb-3">If Hydraulic:</h4>
+   472→                <div className="space-y-3">
+   473→                  <div className="flex items-center gap-3">
+   474→                    <Checkbox
+   475→                      id="hyd-fluid"
+   476→                      checked={formData.hydraulicFluidLeak === 'Yes'}
+   477→                      onCheckedChange={() => toggleCheckbox('hydraulicFluidLeak')}
+   478→                    />
+   479→                    <Label htmlFor="hyd-fluid" className="text-sm text-slate-600">
+   480→                      i. Want of fluid
+   481→                    </Label>
+   482→                  </div>
+   483→                  <div className="flex items-center gap-3">
+   484→                    <Checkbox
+   485→                      id="hyd-leakage"
+   486→                      checked={formData.hydraulicLeakage === 'Yes'}
+   487→                      onCheckedChange={() => toggleCheckbox('hydraulicLeakage')}
+   488→                    />
+   489→                    <Label htmlFor="hyd-leakage" className="text-sm text-slate-600">
+   490→                      ii. Leakage in the system
+   491→                    </Label>
+   492→                  </div>
+   493→                  <div className="flex items-center gap-3">
+   494→                    <Checkbox
+   495→                      id="hyd-breakages"
+   496→                      checked={formData.hydraulicBreakages === 'Yes'}
+   497→                      onCheckedChange={() => toggleCheckbox('hydraulicBreakages')}
+   498→                    />
+   499→                    <Label htmlFor="hyd-breakages" className="text-sm text-slate-600">
+   500→                      iii. Breakages in the system
+   501→                    </Label>
+   502→                  </div>
+   503→                  <div className="flex items-center gap-3">
+   504→                    <Checkbox
+   505→                      id="hyd-worn"
+   506→                      checked={formData.hydraulicWornOut === 'Yes'}
+   507→                      onCheckedChange={() => toggleCheckbox('hydraulicWornOut')}
+   508→                    />
+   509→                    <Label htmlFor="hyd-worn" className="text-sm text-slate-600">
+   510→                      iv. Worn out parts
+   511→                    </Label>
+   512→                  </div>
+   513→                  <Input
+   514→                    value={formData.hydraulicFailureOther || ''}
+   515→                    onChange={(e) => updateField('hydraulicFailureOther', e.target.value)}
+   516→                    placeholder="Additional hydraulic notes"
+   517→                    className="border-slate-300 mt-2"
+   518→                  />
+   519→                </div>
+   520→              </div>
+   521→
+   522→              {/* Mechanical */}
+   523→              <div className="border border-slate-200 rounded-lg p-4">
+   524→                <h4 className="font-medium text-slate-700 mb-3">If Mechanical:</h4>
+   525→                <div className="space-y-3">
+   526→                  <div className="flex items-center gap-3">
+   527→                    <Checkbox
+   528→                      id="mech-lub"
+   529→                      checked={formData.mechanicalLackLubrication === 'Yes'}
+   530→                      onCheckedChange={() => toggleCheckbox('mechanicalLackLubrication')}
+   531→                    />
+   532→                    <Label htmlFor="mech-lub" className="text-sm text-slate-600">
+   533→                      i. Lack of lubrication
+   534→                    </Label>
+   535→                  </div>
+   536→                  <div className="flex items-center gap-3">
+   537→                    <Checkbox
+   538→                      id="mech-slack"
+   539→                      checked={formData.mechanicalSlackAdjustment === 'Yes'}
+   540→                      onCheckedChange={() => toggleCheckbox('mechanicalSlackAdjustment')}
+   541→                    />
+   542→                    <Label htmlFor="mech-slack" className="text-sm text-slate-600">
+   543→                      ii. Slack in adjustment
+   544→                    </Label>
+   545→                  </div>
+   546→                  <div className="flex items-center gap-3">
+   547→                    <Checkbox
+   548→                      id="mech-worn"
+   549→                      checked={formData.mechanicalWornOut === 'Yes'}
+   550→                      onCheckedChange={() => toggleCheckbox('mechanicalWornOut')}
+   551→                    />
+   552→                    <Label htmlFor="mech-worn" className="text-sm text-slate-600">
+   553→                      iii. Worn out parts
+   554→                    </Label>
+   555→                  </div>
+   556→                  <Input
+   557→                    value={formData.mechanicalFailureOther || ''}
+   558→                    onChange={(e) => updateField('mechanicalFailureOther', e.target.value)}
+   559→                    placeholder="Additional mechanical notes"
+   560→                    className="border-slate-300 mt-2"
+   561→                  />
+   562→                </div>
+   563→              </div>
+   564→            </div>
+   565→
+   566→            {/* Field 11 */}
+   567→            <div>
+   568→              <Label className="text-slate-700 font-medium mb-3 block">
+   569→                11. Parking brake failure cause
+   570→              </Label>
+   571→              <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+   572→                <div className="flex items-center gap-3">
+   573→                  <Checkbox
+   574→                    id="pb-lub"
+   575→                    checked={formData.parkingBrakeLackLubrication === 'Yes'}
+   576→                    onCheckedChange={() => toggleCheckbox('parkingBrakeLackLubrication')}
+   577→                  />
+   578→                  <Label htmlFor="pb-lub" className="text-sm text-slate-600">
+   579→                    i. Lack of lubrication
+   580→                  </Label>
+   581→                </div>
+   582→                <div className="flex items-center gap-3">
+   583→                  <Checkbox
+   584→                    id="pb-slack"
+   585→                    checked={formData.parkingBrakeSlackness === 'Yes'}
+   586→                    onCheckedChange={() => toggleCheckbox('parkingBrakeSlackness')}
+   587→                  />
+   588→                  <Label htmlFor="pb-slack" className="text-sm text-slate-600">
+   589→                    ii. Slackness in adjustment
+   590→                  </Label>
+   591→                </div>
+   592→                <div className="flex items-center gap-3">
+   593→                  <Checkbox
+   594→                    id="pb-worn"
+   595→                    checked={formData.parkingBrakeWornOut === 'Yes'}
+   596→                    onCheckedChange={() => toggleCheckbox('parkingBrakeWornOut')}
+   597→                  />
+   598→                  <Label htmlFor="pb-worn" className="text-sm text-slate-600">
+   599→                    iii. Worn out parts
+   600→                  </Label>
+   601→                </div>
+   602→                <div className="flex items-center gap-3">
+   603→                  <Checkbox
+   604→                    id="pb-other"
+   605→                    checked={formData.parkingBrakeOtherReasons === 'Yes'}
+   606→                    onCheckedChange={() => toggleCheckbox('parkingBrakeOtherReasons')}
+   607→                  />
+   608→                  <Label htmlFor="pb-other" className="text-sm text-slate-600">
+   609→                    iv. Any other reasons
+   610→                  </Label>
+   611→                </div>
+   612→              </div>
+   613→            </div>
+   614→          </AccordionContent>
+   615→        </AccordionItem>
+   616→
+   617→        {/* Section 5 - Steering, Tyres & Documents */}
+   618→        <AccordionItem value="section-5" className="border border-slate-300 rounded-lg overflow-hidden">
+   619→          <AccordionTrigger className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-800 font-medium hover:no-underline">
+   620→            <span className="flex items-center gap-2">
+   621→              <Shield className="h-4 w-4" />
+   622→              Section 5 — Steering, Tyres &amp; Documents
+   623→            </span>
+   624→          </AccordionTrigger>
+   625→          <AccordionContent className="px-4 pb-4 pt-2 space-y-4">
+   626→            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   627→              <div className="space-y-2">
+   628→                <Label className="text-slate-700 font-medium">
+   629→                  12. Steering/Handle excessive backlash
+   630→                </Label>
+   631→                <Select
+   632→                  value={formData.steeringBacklash || ''}
+   633→                  onValueChange={(v) => updateField('steeringBacklash', v)}
+   634→                >
+   635→                  <SelectTrigger className="border-slate-300">
+   636→                    <SelectValue placeholder="Select" />
+   637→                  </SelectTrigger>
+   638→                  <SelectContent>
+   639→                    <SelectItem value="Yes">Yes</SelectItem>
+   640→                    <SelectItem value="No">No</SelectItem>
+   641→                  </SelectContent>
+   642→                </Select>
+   643→              </div>
+   644→              <div className="space-y-2">
+   645→                <Label className="text-slate-700 font-medium">
+   646→                  13. Condition of tyres
+   647→                </Label>
+   648→                <Select
+   649→                  value={formData.tyreCondition || ''}
+   650→                  onValueChange={(v) => updateField('tyreCondition', v)}
+   651→                >
+   652→                  <SelectTrigger className="border-slate-300">
+   653→                    <SelectValue placeholder="Select" />
+   654→                  </SelectTrigger>
+   655→                  <SelectContent>
+   656→                    <SelectItem value="Good">Good</SelectItem>
+   657→                    <SelectItem value="Fair">Fair</SelectItem>
+   658→                    <SelectItem value="Poor">Poor</SelectItem>
+   659→                    <SelectItem value="Worn Out">Worn Out</SelectItem>
+   660→                  </SelectContent>
+   661→                </Select>
+   662→              </div>
+   663→            </div>
+   664→
+   665→            <div className="space-y-2">
+   666→              <Label className="text-slate-700 font-medium">
+   667→                14. Date of validity of permit
+   668→              </Label>
+   669→              <Input
+   670→                value={formData.permitValidity || ''}
+   671→                onChange={(e) => updateField('permitValidity', e.target.value)}
+   672→                placeholder="Permit validity date or 'Not Produced'"
+   673→                className="border-slate-300"
+   674→              />
+   675→            </div>
+   676→
+   677→            <div>
+   678→              <Label className="text-slate-700 font-medium mb-3 block">
+   679→                15. Insurance details
+   680→              </Label>
+   681→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   682→                <div className="space-y-1">
+   683→                  <Label className="text-xs text-slate-500">Insurance expiry date</Label>
+   684→                  <Input
+   685→                    value={formData.insuranceExpiryDate || ''}
+   686→                    onChange={(e) => updateField('insuranceExpiryDate', e.target.value)}
+   687→                    placeholder="Expiry date"
+   688→                    className="border-slate-300"
+   689→                  />
+   690→                </div>
+   691→                <div className="space-y-1">
+   692→                  <Label className="text-xs text-slate-500">Insurance company name &amp; address</Label>
+   693→                  <Input
+   694→                    value={formData.insuranceCompany || ''}
+   695→                    onChange={(e) => updateField('insuranceCompany', e.target.value)}
+   696→                    placeholder="Company name and address"
+   697→                    className="border-slate-300"
+   698→                  />
+   699→                </div>
+   700→                <div className="space-y-1">
+   701→                  <Label className="text-xs text-slate-500">Policy number</Label>
+   702→                  <Input
+   703→                    value={formData.insurancePolicyNo || ''}
+   704→                    onChange={(e) => updateField('insurancePolicyNo', e.target.value)}
+   705→                    placeholder="Policy number"
+   706→                    className="border-slate-300"
+   707→                  />
+   708→                </div>
+   709→                <div className="space-y-1">
+   710→                  <Label className="text-xs text-slate-500">Certificate number</Label>
+   711→                  <Input
+   712→                    value={formData.insuranceCertificate || ''}
+   713→                    onChange={(e) => updateField('insuranceCertificate', e.target.value)}
+   714→                    placeholder="Certificate number"
+   715→                    className="border-slate-300"
+   716→                  />
+   717→                </div>
+   718→              </div>
+   719→            </div>
+   720→          </AccordionContent>
+   721→        </AccordionItem>
+   722→
+   723→        {/* Section 6 - People */}
+   724→        <AccordionItem value="section-6" className="border border-slate-300 rounded-lg overflow-hidden">
+   725→          <AccordionTrigger className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-800 font-medium hover:no-underline">
+   726→            <span className="flex items-center gap-2">
+   727→              <Users className="h-4 w-4" />
+   728→              Section 6 — People
+   729→            </span>
+   730→          </AccordionTrigger>
+   731→          <AccordionContent className="px-4 pb-4 pt-2 space-y-4">
+   732→            <div className="space-y-2">
+   733→              <Label className="text-slate-700 font-medium">
+   734→                16. Name and address of the owner
+   735→              </Label>
+   736→              <Textarea
+   737→                value={formData.ownerName || ''}
+   738→                onChange={(e) => updateField('ownerName', e.target.value)}
+   739→                placeholder="Owner name and address"
+   740→                className="border-slate-300 min-h-[60px]"
+   741→              />
+   742→            </div>
+   743→            <div className="space-y-2">
+   744→              <Label className="text-slate-700 font-medium">
+   745→                17. Name and address of the driver
+   746→              </Label>
+   747→              <Textarea
+   748→                value={formData.driverName || ''}
+   749→                onChange={(e) => updateField('driverName', e.target.value)}
+   750→                placeholder="Driver name and address"
+   751→                className="border-slate-300 min-h-[60px]"
+   752→              />
+   753→            </div>
+   754→            <div className="space-y-2">
+   755→              <Label className="text-slate-700 font-medium">
+   756→                18. Particulars of driver&apos;s licence
+   757→              </Label>
+   758→              <Textarea
+   759→                value={formData.driverLicenceDetails || ''}
+   760→                onChange={(e) => updateField('driverLicenceDetails', e.target.value)}
+   761→                placeholder="Licence number, class, issuing authority, validity"
+   762→                className="border-slate-300 min-h-[60px]"
+   763→              />
+   764→            </div>
+   765→            <div className="space-y-2">
+   766→              <Label className="text-slate-700 font-medium">
+   767→                19. Person involved in accident, injuries, persons killed
+   768→              </Label>
+   769→              <Textarea
+   770→                value={formData.involvedPersonDetails || ''}
+   771→                onChange={(e) => updateField('involvedPersonDetails', e.target.value)}
+   772→                placeholder="Details of persons involved, injuries, fatalities"
+   773→                className="border-slate-300 min-h-[80px]"
+   774→              />
+   775→            </div>
+   776→            <div className="space-y-2">
+   777→              <Label className="text-slate-700 font-medium">
+   778→                20. Legal heirs of deceased in fatal accident
+   779→              </Label>
+   780→              <Textarea
+   781→                value={formData.legalHeirsDetails || ''}
+   782→                onChange={(e) => updateField('legalHeirsDetails', e.target.value)}
+   783→                placeholder="Legal heirs details (if fatal accident)"
+   784→                className="border-slate-300 min-h-[60px]"
+   785→              />
+   786→            </div>
+   787→          </AccordionContent>
+   788→        </AccordionItem>
+   789→
+   790→        {/* Section 7 - Conclusion */}
+   791→        <AccordionItem value="section-7" className="border border-slate-300 rounded-lg overflow-hidden">
+   792→          <AccordionTrigger className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-800 font-medium hover:no-underline">
+   793→            <span className="flex items-center gap-2">
+   794→              <ClipboardCheck className="h-4 w-4" />
+   795→              Section 7 — Conclusion
+   796→            </span>
+   797→          </AccordionTrigger>
+   798→          <AccordionContent className="px-4 pb-4 pt-2 space-y-4">
+   799→            <div className="space-y-2">
+   800→              <Label className="text-slate-700 font-medium">
+   801→                21. Was accident due to mechanical defects? Opinion/conclusion
+   802→              </Label>
+   803→              <Textarea
+   804→                value={formData.mechanicalDefectsOpinion || ''}
+   805→                onChange={(e) => updateField('mechanicalDefectsOpinion', e.target.value)}
+   806→                placeholder="Provide your opinion and conclusion"
+   807→                className="border-slate-300 min-h-[80px]"
+   808→              />
+   809→            </div>
+   810→            <div className="space-y-2">
+   811→              <Label className="text-slate-700 font-medium">
+   812→                22. Was the vehicle on Trade Plate? Details
+   813→              </Label>
+   814→              <Textarea
+   815→                value={formData.tradePlateDetails || ''}
+   816→                onChange={(e) => updateField('tradePlateDetails', e.target.value)}
+   817→                placeholder="Trade plate details if applicable"
+   818→                className="border-slate-300 min-h-[60px]"
+   819→              />
+   820→            </div>
+   821→          </AccordionContent>
+   822→        </AccordionItem>
+   823→
+   824→        {/* Section 8 - VCR & Signature */}
+   825→        <AccordionItem value="section-8" className="border border-slate-300 rounded-lg overflow-hidden">
+   826→          <AccordionTrigger className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-800 font-medium hover:no-underline">
+   827→            <span className="flex items-center gap-2">
+   828→              <Stamp className="h-4 w-4" />
+   829→              Section 8 — VCR &amp; Signature
+   830→            </span>
+   831→          </AccordionTrigger>
+   832→          <AccordionContent className="px-4 pb-4 pt-2 space-y-4">
+   833→            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   834→              <div className="space-y-2">
+   835→                <Label className="text-slate-700 font-medium">VCR No</Label>
+   836→                <Input
+   837→                  value={formData.vcrNo || ''}
+   838→                  onChange={(e) => updateField('vcrNo', e.target.value)}
+   839→                  placeholder="VCR number"
+   840→                  className="border-slate-300"
+   841→                />
+   842→              </div>
+   843→              <div className="space-y-2">
+   844→                <Label className="text-slate-700 font-medium">VCR Date</Label>
+   845→                <Input
+   846→                  value={formData.vcrDate || ''}
+   847→                  onChange={(e) => updateField('vcrDate', e.target.value)}
+   848→                  placeholder="VCR date"
+   849→                  className="border-slate-300"
+   850→                />
+   851→              </div>
+   852→            </div>
+   853→            <div className="space-y-2">
+   854→              <Label className="text-slate-700 font-medium">Copy to</Label>
+   855→              <Input
+   856→                value={formData.copyTo || ''}
+   857→                onChange={(e) => updateField('copyTo', e.target.value)}
+   858→                placeholder="Recipient for copy"
+   859→                className="border-slate-300"
+   860→              />
+   861→            </div>
+   862→            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+   863→              <div className="space-y-2">
+   864→                <Label className="text-slate-700 font-medium">Inspector Name</Label>
+   865→                <Input
+   866→                  value={formData.inspectorName || ''}
+   867→                  onChange={(e) => updateField('inspectorName', e.target.value)}
+   868→                  placeholder="Full name"
+   869→                  className="border-slate-300"
+   870→                />
+   871→              </div>
+   872→              <div className="space-y-2">
+   873→                <Label className="text-slate-700 font-medium">Inspector Title</Label>
+   874→                <Input
+   875→                  value={formData.inspectorTitle || ''}
+   876→                  onChange={(e) => updateField('inspectorTitle', e.target.value)}
+   877→                  placeholder='e.g. "MOTOR VEHICLES INSPECTOR"'
+   878→                  className="border-slate-300"
+   879→                />
+   880→              </div>
+   881→              <div className="space-y-2">
+   882→                <Label className="text-slate-700 font-medium">Inspector Location</Label>
+   883→                <Input
+   884→                  value={formData.inspectorLocation || ''}
+   885→                  onChange={(e) => updateField('inspectorLocation', e.target.value)}
+   886→                  placeholder="Office location"
+   887→                  className="border-slate-300"
+   888→                />
+   889→              </div>
+   890→            </div>
+   891→          </AccordionContent>
+   892→        </AccordionItem>
+   893→      </Accordion>
+   894→
+   895→      {/* Submit Buttons */}
+   896→      <div className="flex flex-col sm:flex-row gap-3 justify-end pt-2">
+   897→        <Button
+   898→          type="button"
+   899→          variant="outline"
+   900→          onClick={handleReset}
+   901→          className="border-slate-300 text-slate-700"
+   902→        >
+   903→          <RotateCcw className="h-4 w-4 mr-2" />
+   904→          Reset Form
+   905→        </Button>
+   906→        <Button
+   907→          type="submit"
+   908→          disabled={isSubmitting}
+   909→          className="bg-slate-800 hover:bg-slate-900 text-white"
+   910→        >
+   911→          <Save className="h-4 w-4 mr-2" />
+   912→          {isSubmitting ? 'Submitting...' : 'Submit Report'}
+   913→        </Button>
+   914→      </div>
+   915→    </form>
+   916→  );
+   917→}
+   918→
